@@ -1,0 +1,63 @@
+﻿Trigger to validate that the date of conference is after the of publishing of the paper being presented at the conference.
+
+
+CREATE FUNCTION pap_date_function() RETURNS trigger as $paper_date$
+DECLARE date1 date; date2 date; date3 date;
+BEGIN
+                select con_edate into date1 from conference WHERE con_ID=NEW.con_ID;
+                select pub_date into date2 from paper where pap_ID=new.pap_ID;
+
+
+                IF(date2>date1)THEN
+                        RAISE EXCEPTION 'Cant present a paper that hasnt been written yet conference %  paper %', date1, date2;
+                        return null;
+                END IF;
+                return new;
+END;
+$paper_date$ LANGUAGE 'plpgsql';
+
+
+CREATE trigger paper_date
+BEFORE INSERT ON paperpresentation
+        FOR EACH ROW EXECUTE PROCEDURE pap_date_function();
+________________
+Trigger to validate that the presenter of a paper is also an author of the paper
+
+
+CREATE FUNCTION pap_presenter_function() RETURNS trigger as $paper_presenter$
+DECLARE author record;
+BEGIN
+                for author in select * from paperwritten where pap_ID=new.pap_ID loop
+                        IF(new.ieeeno=author.ieeeno)THEN
+                                return new;
+                        END IF;
+                raise exception 'cant present a paper you havent written %', new.pap_ID;
+                end loop;
+END;
+$paper_presenter$ LANGUAGE 'plpgsql';
+
+
+CREATE trigger paper_presenter
+BEFORE INSERT ON paperpresentation
+        FOR EACH ROW EXECUTE PROCEDURE pap_presenter_function();
+________________
+Trigger to make sure that the presenter of a paper is not a judge at the same conference.
+
+
+CREATE FUNCTION jury_check_function() RETURNS trigger as $jury_check$
+DECLARE judge record;
+BEGIN
+                for judge in select * from jury where con_ID=new.con_ID loop
+                        IF(new.ieeno==judge.ieeeno)THEN
+                                raise exception 'cant be judge and presenter both %' , judge.ieeeno;
+                                return null;
+                        END IF;
+                end loop;
+                return new;
+END;
+$jury_check$ LANGUAGE 'plpgsql';
+
+
+CREATE trigger jury_check
+BEFORE INSERT ON paperpresentation
+        FOR EACH ROW EXECUTE PROCEDURE jury_check_function();

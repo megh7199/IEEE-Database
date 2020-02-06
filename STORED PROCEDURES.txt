@@ -1,0 +1,151 @@
+﻿Finding out the duration of a given conference
+
+
+CREATE OR REPLACE FUNCTION conf_duration(cid numeric(7,0)) 
+RETURNS integer as $BODY$
+DECLARE st Conference.con_sdate%TYPE;
+              e Conference.con_edate%TYPE;
+                a integer;
+BEGIN
+        SELECT con_sdate into st FROM Conference WHERE con_ID=cid;                SELECT con_edate into e FROM Conference WHERE con_ID=cid;
+        a= e-st;
+        return a;
+END;
+$BODY$
+language plpgsql;
+
+
+Query: select * from conf_duration(1001)
+Ans:2
+
+
+Check if two given authors have ever collaborated on a paper.
+
+
+CREATE OR REPLACE FUNCTION worked_together(in1 numeric(10,0),in2 numeric(10,0) ) 
+RETURNS bool as $$
+DECLARE p1 projectwork%rowtype;
+            p2 projectwork%rowtype;
+                f integer;
+BEGIN
+        f:=0;
+        for p1 in select * from projectwork where ieeeno=in1
+        loop
+                for p2 in select * from projectwork where ieeeno=in2 loop
+                if p1.proj_id=p2.proj_id then
+                return true;
+                end if;
+                end loop;
+        end loop;
+        return false;
+END;
+$$
+language plpgsql;
+
+
+Query: select * from worked_together(20000004,20000111)
+Ans: false
+
+
+Return whether a given IEEENumber belongs to a student member or a professional member.
+
+
+CREATE OR REPLACE FUNCTION IEEEposition(IEEEn numeric(8,0)) 
+returns void
+as $$
+DECLARE 
+ab numeric(8);
+BEGIN
+    SELECT s.ieeeno into ab FROM studentmember as s WHERE s.ieeeno=IEEEn;
+        IF ab is not null then
+                raise notice 'Student Member';
+                RETURN;
+        ELSE
+                raise notice 'Professional Member';
+                RETURN;
+                END if;
+
+
+END;
+$$
+language plpgsql;
+
+
+Query: select * from IEEEposition(20000065)
+Ans: Student Member
+
+
+To check whether a paper presented at a particular conference was accepted or not.
+
+
+CREATE OR REPLACE FUNCTION perc_accepted_conference(cid numeric(4,0) ) 
+RETURNS real as $$
+DECLARE        total integer;
+                acc integer;
+                ab real;
+        
+BEGIN
+        SELECT count(pap_id) into total  FROM paperpresentation WHERE con_id=cid;
+        raise notice '%',total;
+        SELECT count(pap_id)into acc FROM (SELECT pap_id FROM (SELECT pap_id FROM paperpresentation WHERE con_id=cid)as sa NATURAL JOIN paper as pa where pa.accepted='true')as o;
+        raise notice '%',acc;
+        ab= acc*100/total;
+        return ab;
+END;
+$$
+language plpgsql;
+
+
+Query: select * from perc_accepted_conference(1001)
+Ans: (62%) 8,5
+
+
+Check whether all the people working on a project are from the same student branch or not
+
+
+CREATE OR REPLACE FUNCTION project_work(projid varchar(6)) 
+RETURNS bool as $$
+DECLARE   
+        ab integer;
+BEGIN
+         Select count(distinct sb.sb_id) into ab from studentbranch as sb join (Select * from projectwork where proj_id=projid)as pa on pa.ieeeno=sb.ieeeno;
+         If ab=1 then 
+                RETURN true;
+        Else
+                RETURN false;
+                end if;
+                
+        
+END;
+$$
+language plpgsql;
+
+
+Query: select * from project_work('CS1')
+Ans: false
+
+
+Computing ranks of students members and returning ranks of a given IEEEnumber.
+
+
+CREATE OR REPLACE FUNCTION assign_rank(num numeric(8,0)) 
+RETURNS integer as $BODY$
+DECLARE rank integer; r record;
+
+
+BEGIN
+        rank=0;
+        for r in select * from studentmember order by cpi desc loop
+                rank=rank+1;
+                update studentmember set cpi_rank=rank
+                        where studentmember.ieeeno=r.ieeeno;
+        end loop;
+        select cpi_rank into rank from studentmember where ieeeno=num;
+        return rank;
+END;
+$BODY$
+language plpgsql;
+
+
+Query: select * from assign_rank(20000069)
+Ans: 85

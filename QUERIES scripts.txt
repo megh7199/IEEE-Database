@@ -1,0 +1,221 @@
+﻿1)Who was the chairperson of IEEE student branch IEEE Student Branch of ADANI in the year 2017
+
+
+SET search_path TO IEEE;
+select * from 
+(select * from 
+(select sbd.sb_id,sbd.IEEEno,sb_position,sb_name,sb_year from studentbranchdesignation as sbd join studentbranch as sb on sbd.sb_id=sb.sb_id ) 
+as sbandp join studentmember as ism on sbandp.IEEEno=ism.IEEEno )
+ as jo
+ where sb_position='chair' and sb_name = 'Adani Institute of Infrastructure Engineering' and extract(year from sb_year)=2017
+
+
+2)Who was the branch counsellor of IEEE Student Branch of Adani Institute of Infrastructure Engineering
+
+
+SET search_path TO IEEE;
+
+
+select im.name from  
+(select * from
+(select * from studentbranch as sb ) as aa 
+ natural join professionalmember as ipm)as sbncnipm
+ join IEEEmember as im
+ on im.IEEEno = sbncnipm.IEEEno
+ where sb_name = ‘Adani Institute of Infrastructure Engineering’
+  
+3)List all research papers published by members of IEEE Student Branch of University of Cambridge in the years from 2011-2015
+
+
+
+
+set search_path to IEEE;
+select pap_topic  from 
+(select * from 
+(select * from studentbranch as sb natural join studentmember as ism ) 
+as sbnism join IEEEmember as im 
+on im.IEEEno = sbnism.IEEEno )
+as allinfo natural join
+ ( select * from Paper) as pp 
+where sb_name= ‘University of Cambridge' and  extract(year from pub_date)>='2011' and  extract(year from pub_date)<='2015'
+ 
+
+
+  
+
+
+
+
+4) List student members who have been part of the core committee for exactly ONE year.
+
+
+SET search_path TO IEEE;
+Select * from IEEEmember natural join(
+select IEEEno from studentmember
+ natural join 
+(select IEEEno,count(sb_year)from 
+studentbanchdesignation as sbd
+group by IEEEno having count(sb_year) =1  )
+ as counter ) as aa
+ 
+
+
+
+
+5)  Give the name of the city where maximum number of conferences took place
+
+
+SET search_path TO IEEE;
+ 
+select con_loc, count(con_id) as confcount from conference
+group by con_loc
+Order by confcount desc limit 1;
+
+
+ 
+
+
+
+
+6) Give number of papers published with members Quiana Slayden  and Jennell Huwe both were part of the jury which judged it.
+
+
+set search_path to IEEE; 
+
+
+select count(pap_id) from 
+(
+select con_id from jury natural join conference natural join professionalmember natural join IEEEmember  where name='Quiana Slayden'
+intersect 
+select con_id from jury natural join conference natural join professionalmember natural join IEEEmember  where name='Jennell Huwe '
+
+
+) as comcon natural join paper 
+
+
+
+
+
+
+
+
+
+
+
+
+7) Retrieve details of the members of the jury in the conference of year 2009 where the paper of author with ID 20000024 was published.
+
+
+SET search_path TO IEEE;
+
+
+select IEEEmember  .*  from (select IEEEno from jury
+ natural join conference
+ natural join paper
+ where extract(year from pub_date) = ‘2009’ and IEEEno =  20000024) as juryinfo
+ Natural join professionalmember 
+Natural  join IEEEmember 
+
+
+
+
+8) Retrieve total number of papers published from the year 2011 to 2017 for all conference locations 
+set search_path to IEEE ; 
+
+
+select con_loc,count(pap_id) from (select * from paper
+ natural join conference
+ where extract(year from pub_date) >= 2011 and extract(year from pub_date) <= 2013) as aa group by con_loc;
+
+
+ 
+9) Retrieve the total research papers passed under ID 20000012 as a jury member.
+
+
+SET search_path TO IEEE;
+select count(pap_id) from jury natural join Conference natural join paper where IEEEno=20000012 
+
+
+
+
+10) Retrieve details of all papers written by students belonging to the student branch with ID 1264814
+
+
+set search_path to IEEE;
+select * from paper natural join paperwritten natural join IEEEmember NATURAL join studentmember   where sb_id ='1264814' 
+
+
+
+
+11) Retrieve details of professional members who have been a jury more than 3 times.
+
+
+set search_path to IEEE;
+ select * from IEEEmember where IEEEno=(select jury.IEEEno as IEEEn from jury
+natural join conference 
+natural join professionalMember group by jury.IEEEno having count(jury.con_id)>3 )
+
+
+
+
+12) FOR GIVEN YEAR DISPLAY CORE-MEMBERS OF ALL STUDENT BRANCH
+
+
+set search_path to IEEE;
+select * from IEEEmember natural join(
+Select sb_id,IEEEno,sb_position, sb_year from studentbranchdesignation
+Group by sb_id,IEEEno,sb_position,sb_year having extract(year from sb_year)='2017') as aa
+
+
+
+
+13) List all papers published by IEEE Member August Davis.
+
+
+Select pap_topic from paper natural join paperwritten natural join IEEEmember where name=’August Davis’
+ 
+
+
+
+
+14) List all members of the jury that judged paper  404.
+
+
+Select *  from IEEEmember natural join ( select * from jury natural join conference natural join paper where pap_id=404) as aa
+ 
+
+
+15) List names of the chair-person of IEEE section ABC for all years.
+
+
+set search_path to IEEE;
+Select * from IEEEmember natural join (
+(select  sec_id,sec_year,sec_position,IEEEno from sectiondesignation 
+ group by sec_id,sec_year,sec_position,IEEEno having sec_position='chair') as aa natural join section)as aa where sec_name='london' 
+ 
+
+
+16) List all the members who have presented a paper at conference id 1001, conference id 1004 and conference id 1006(all three).
+
+
+Set search_path to IEEE;
+
+
+Select  * from IEEEmember natural join (select * from conference natural join paperpresentation where con_id=1001) as aa
+Intersect
+Select  * from IEEEmember natural join (select * from conference natural join paperpresentation where con_id=1004) as ab
+Intersect
+Select  * from IEEEmember natural join (select * from conference natural join paperpresentation where con_id=1006) as ac
+
+
+
+
+17) List all the members who have presented a paper at conference 1002, conference 1001 or conference 1003(any one of the three).
+ 
+
+
+Select  * from IEEEmember natural join (select * from conference natural join paperpresentation where con_id=1002) as aa
+union
+Select  * from IEEEmember natural join (select * from conference natural join paperpresentation where con_id=1001) as ab
+union
+Select  * from IEEEmember natural join (select * from conference natural join paperpresentation where con_id=1003) as ac

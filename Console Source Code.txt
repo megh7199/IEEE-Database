@@ -1,0 +1,395 @@
+﻿#include <stdio.h>
+#include <stdlib.h>
+#include <libpq-fe.h>
+#include <string.h>
+#include <unistd.h>
+#include<stdbool.h>
+#include"sqlda.h"
+int x;
+char q[128],temp;
+
+
+PGresult *res;
+PGconn *conn;
+
+
+void insert_choice() {
+        int choice;
+        char buf[20],c;
+        char *query = (char *)malloc(250 * sizeof(char));
+        printf("WHAT DO YOU WANT TO INSERT?\n1. IEEE Member\n2. section\n3. Conference \n4.Project \n5.Paper \n6.Other\n");
+        printf("Choose the entity: ");
+        scanf("%d",&choice);
+        fflush(stdout);
+        c=getchar();
+
+
+        switch(choice){
+                case 1:{
+                        char name[100],email[100],query1[250],dob[10],field[10],degree[10],edu[7],profession[7];
+                        int IsStudent,cpi;
+                        long long int ieeeno=0,sbid;
+                        char ieeenum[5];
+                        //bool student;
+                        //char s[10];
+                        printf("Name: ");
+                        scanf("%[^\n]%*c", name);
+                        printf("Email: ");
+                        scanf("%[^\n]%*c", email);
+                        printf("Date of birth: ");
+                        scanf("%[^\n]%*c",&dob);
+                        printf("Student(1) OR Professional(0)? ");
+                        scanf("%d",&IsStudent);
+                        
+                        strcpy(query,"insert into ieeemember  values  (");
+                        /*Code to assign unique IEEE NUMBER to new Member*/                        
+                        res = PQexec(conn, "select max(ieeeno) from ieeemember;");
+                        if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+                                       printf("Failed to assign IEEE Number!\n");
+                                PQclear(res);
+                            }
+                        else{
+                                strcpy(ieeenum,PQgetvalue(res, 0, 0));
+                                int len = strlen(ieeenum);
+                                for(int i=0; i<len; i++){
+                                        ieeeno = ieeeno * 10 + ( ieeenum[i] - '0' );
+                                }
+                                ieeeno=ieeeno+1;
+                        }
+
+
+                
+                        /*CODE TO GENERATE INSERT QUERY IN BACK GROUND*/
+                        sprintf(buf,"%lld",ieeeno);
+                        strcat(query, buf);
+                        strcat(query,",'");
+                        strcat(query,name);
+                        strcat(query,"','");
+                        strcat(query,email);
+                        strcat(query,"','");
+                        strcat(query,dob);                
+                        strcat(query,"');");
+                        /*CODE TO RUN QUERY*/
+                        res = PQexec(conn, query);
+                            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                printf("\nError: %s\n",PQerrorMessage(conn));
+                            }
+                        else {
+                                printf("AUTO-GENERATED INSERT STATEMENT ran Successfully!\n");
+                        }
+                            PQclear(res);
+                        break;
+                        
+                        if(IsStudent==1){
+                                printf("CPI: ");
+                                scanf("%d", cpi);
+                                printf("Field: ");
+                                scanf("%[^\n]%*c",&field);
+                                printf("Degree: ");
+                                scanf("%[^\n]%*c",&degree);
+                                printf("Student Branch ID: ");
+                                scanf("%lld",sbid);
+                                strcpy(query1,"insert into studentmember values (");
+                        
+                                /*CODE TO GENERATE INSERT QUERY IN BACK GROUND*/
+                                sprintf(buf,"%lld",ieeeno);
+                                strcat(query1, buf);
+                                strcat(query1,",");
+                                sprintf(buf,"%d",cpi);
+                                strcat(query1, buf);
+                                strcat(query1,",'");
+                                strcat(query1,field);
+                                strcat(query1,"','");
+                                strcat(query1,degree);
+                                strcat(query1,"',");
+                                sprintf(buf,"%lld",sbid);
+                                strcat(query1, buf);                                
+                                strcat(query1,");");
+                                /*CODE TO RUN QUERY*/
+                                res = PQexec(conn, query1);
+                                        if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                        printf("\nError1: %s\n",PQerrorMessage(conn));
+                                        }
+                                else {
+                                        printf("AUTO-GENERATED student member INSERT STATEMENT ran Successfully!\n");
+                                }
+                                        PQclear(res);
+                                break;
+                                        //student=true;
+                                        //strcpy(s,"true");
+                                        
+                                }        
+                        else{
+                                //profmember
+                                printf("Education: ");
+                                scanf("%[^\n]%*c",&edu);
+                                printf("Profession: ");
+                                scanf("%[^\n]%*c",&profession);
+                                strcpy(query1,"insert into professionalmember values (");
+                        
+                                /*CODE TO GENERATE INSERT QUERY IN BACK GROUND*/
+                                sprintf(buf,"%lld",ieeeno);
+                                strcat(query1, buf);
+                                strcat(query1,",'");
+                                strcat(query1,edu);
+                                strcat(query1,"','");
+                                strcat(query1,profession);                                
+                                strcat(query1,"');");
+                                /*CODE TO RUN QUERY*/
+                                res = PQexec(conn, query1);
+                                        if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                        printf("\nError2: %s\n",PQerrorMessage(conn));
+                                        }
+                                else {
+                                        printf("AUTO-GENERATED professional member INSERT STATEMENT ran Successfully!\n");
+                                }
+                                        PQclear(res);
+                                break;
+                                
+                        }
+                        while ((getchar()) != '\n');
+                }
+                case 2:{
+                        char sec_name[10],country[10];
+                        long long int secid;
+                        printf("Section ID: ");
+                        scanf("%lld",&secid);
+                        printf("section f name: ");
+                        scanf("%[^\n]%*c",sec_name);
+                        printf("country name: ");
+                        scanf("%[^\n]%*c",country);
+                        strcpy(query,"insert into section  values  ('");
+                        sprintf(buf,"%lld",secid);
+                        strcat(query, buf);
+                        strcat(query,",'");
+                        strcat(query,sec_name);
+                        strcat(query,"','");
+                        strcat(query,country);
+                        strcat(query,"');");
+                        printf("%s\n",query);
+                        res = PQexec(conn, query);
+                            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                printf("\nError: %s\n",PQerrorMessage(conn));
+                            }
+                        else {
+                                printf("AUTO-GENERATED section INSERT STATEMENT ran Successfully!\n");
+                        }
+                            PQclear(res);
+                        break;        
+                }
+        
+
+
+                case 3:{
+                        int con_id;
+                        char con_loc[10],date[20],date1[20];
+                        printf("Conference ID: ");
+                        scanf("[^\n]%d", &con_id);
+                        printf("Conference Location: ");
+                        scanf("%[^\n]%*c", con_loc);
+                        printf("Conference start date<Format:mm/dd/yyyy>: ");
+                        scanf("%[^\n]%*c", date);
+                        printf("Conference end date<Format:mm/dd/yyyy>: ");
+                        scanf("%[^\n]%*c", date1);
+                        strcpy(query,"insert into Conference values  ('");
+                        strcat(query, con_id);
+                        strcat(query,"','");
+                        strcat(query,con_loc);
+                        strcat(query,"','");
+                        strcat(query,date);
+                        strcat(query,"','");
+                        strcat(query,date1);
+
+
+                        strcat(query,"');");
+                        printf("%s\n",query);
+                        res = PQexec(conn, query);
+                            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                printf("\nError: %s\n",PQerrorMessage(conn));
+                            }
+                        else {
+                                printf("AUTO-GENERATED INSERT STATEMENT ran Successfully!\n");
+                        }
+                            PQclear(res);
+                        break;        
+                }
+case 4:{
+                        int proj_fund;
+                        char proj_id[10],proj_name[100],proj_field[20];
+                        printf("Project ID<Format:CS1,CS2..>: ");
+                        scanf("%[^\n]%*c", proj_id);
+                        printf("Project Title:");
+                        scanf("%[^\n]%*c", proj_name);
+                        printf("Project Field ");
+                        scanf("%[^\n]%*c", proj_field);
+                        printf("Project Funding ");
+                        scanf("[^\n]%d",&proj_fund );
+                        strcpy(query,"insert into Project values  ('");
+                        strcat(query, proj_id);
+                        strcat(query,"','");
+                        strcat(query, proj_name);
+                        strcat(query,"','");
+                        strcat(query, proj_field);
+                        strcat(query,"','");
+                        strcat(query, proj_fund);
+
+
+                        strcat(query,"');");
+                        printf("%s\n",query);
+                        res = PQexec(conn, query);
+                            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                printf("\nError: %s\n",PQerrorMessage(conn));
+                            }
+                        else {
+                                printf("AUTO-GENERATED INSERT STATEMENT ran Successfully!\n");
+                        }
+                            PQclear(res);
+                        break;        
+                }
+case 5:{
+                        int pap_id;
+                        char pap_topic[100],date[20],pap_acc[10];
+                        printf("Paper ID: ");
+                        scanf("[^\n]%d", &pap_id);
+                        printf("Paper Topic:");
+                        scanf("%[^\n]%*c", pap_topic);
+                        printf("Paper Accepted<Format:’true’ or ‘false’>: ");
+                        scanf("%[^\n]%*c", pap_acc);
+                        printf("Published date<Format:mm/dd/yyyy>: ");
+                        scanf("%[^\n]%*c", date);
+                        strcpy(query,"insert into Paper values  ('");
+                        strcat(query, pap_id);
+                        strcat(query,"','");
+                        strcat(query,pap_topic);
+                        strcat(query,"','");
+                        strcat(query,pap_acc);
+                        strcat(query,"','");
+                        strcat(query,date);
+
+
+                        strcat(query,"');");
+                        printf("%s\n",query);
+                        res = PQexec(conn, query);
+                            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                printf("\nError: %s\n",PQerrorMessage(conn));
+                            }
+                        else {
+                                printf("AUTO-GENERATED INSERT STATEMENT ran Successfully!\n");
+                        }
+                            PQclear(res);
+                        break;        
+                }
+
+
+
+
+                case 6:{
+                        printf("Write Insert Statement: ");
+                        scanf("%[^\n]s",q);
+                            res = PQexec(conn, q);
+                            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                                printf("\nError: %s\n",PQerrorMessage(conn));
+                            }
+                        else {
+                                printf("Insert Statement ran Successfully!\n");
+                        }
+                            PQclear(res);
+                        break;
+                }
+                default:{
+                        printf("Please choose from choices given above.\n");
+                }
+        }        
+}
+void delete_choice(){
+        printf("Write Delete Statement: ");
+        scanf("%c",&temp);
+        scanf("%[^\n]s",q);
+            res = PQexec(conn, q);
+            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                printf("\nError: %s\n",PQerrorMessage(conn));
+            }
+        else {
+                printf("Delete Statement ran Successfully!\n");
+        }
+            PQclear(res);
+}
+void update_choice(){
+        printf("Write Update Statement: ");
+        scanf("%c",&temp);
+        scanf("%[^\n]s",q);
+            res = PQexec(conn, q);
+            if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+                printf("\nError: %s\n",PQerrorMessage(conn));
+            }
+        else {
+                printf("Update Statement ran Successfully!\n");
+        }
+            PQclear(res);
+}
+void select_query() {
+        printf("Enter Select Query: ");
+        scanf("%c",&temp);
+        scanf("%[^\n]s",q);
+            res = PQexec(conn, q);
+            if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+                printf("No data retrieved\n");
+                PQclear(res);
+            }
+            else {
+                    int rows = PQntuples(res);
+                int cols = PQnfields(res);
+                    printf("\n");
+                    for(int i=0; i<rows; i++) {
+                            for (int j=0;j<cols;j++) {
+                                printf("%s\t",PQgetvalue(res, i, j));
+                            }
+                        printf("\n");
+                }
+        }
+            PQclear(res);
+}
+int main() {
+            conn = PQconnectdb("host=10.100.71.21 user=201701423 password=jashvithlani123 dbname=201701423");
+        if (PQstatus(conn) == CONNECTION_BAD) {
+                fprintf(stderr, "Connection to database failed: %s\n",
+                    PQerrorMessage(conn));
+                exit(1);
+            }
+        printf("CONNECTED TO DATABASE!\n");
+        PQexec(conn, "set search_path to IEEE;");
+        printf("SEARCH_PATH SET!\n");
+        printf("\nChoose Option: \n");
+        printf("1. Insert\n");
+        printf("2. Update\n");
+        printf("3. Delete\n");        
+        printf("4. Query\n");
+        printf("0. Exit\n\n");
+        printf("Enter Option: ");
+
+
+        
+        scanf("%d",&x);
+        
+        while(x){
+
+
+                if (x==1) insert_choice();
+                else if (x==2) update_choice();
+                else if (x==3) delete_choice();        
+                else if(x==4)        select_query();
+
+
+                printf("\n\nChoose Option: \n");
+                printf("1. Insert\n");
+                printf("2. Update\n");
+                printf("3. Delete\n");        
+                printf("4. Query\n");
+                printf("0. Exit\n\n");
+                printf("Enter Option: ");
+
+
+        }
+            PQfinish(conn);
+        return 0;
+}

@@ -1,0 +1,230 @@
+﻿CREATE schema "IEEE";
+
+
+SET search_path TO "IEEE";
+
+
+CREATE TABLE ieeemember(
+                ieeeno numeric(8,0) not NULL,
+                name varchar(50) not NULL,
+                email varchar(50) not null UNIQUE,
+                DOB date,
+                PRIMARY KEY(ieeeno)
+);
+
+
+CREATE TABLE professionalmember (
+ieeeno numeric(8,0) not NULL,
+education varchar(70),
+profession varchar(70),
+PRIMARY KEY (ieeeno),
+FOREIGN key (ieeeno) references ieeemember(ieeeno)
+);
+
+
+CREATE TABLE studentmember(
+ieeeno numeric(8,0),
+cpi numeric(3,2),
+field varchar(30),
+degree varchar(20),
+sb_id numeric(7,0),
+cpi_rank int default 0,
+PRIMARY KEY (ieeeno),
+FOREIGN key (ieeeno) references ieeemember(ieeeno)
+);
+
+
+CREATE TABLE section(
+sec_id numeric(7,0),
+sec_name varchar(20),
+country varchar(30),
+PRIMARY KEY (sec_id)
+);
+
+
+CREATE TABLE sectiondesignation(
+sec_id numeric(7,0) not null,
+sec_position varchar(30) not null,
+sec_year date not null,
+ieeeno numeric(8,0) not null,
+PRIMARY KEY (sec_id, sec_position, sec_year),
+FOREIGN key(ieeeno) references ieeemember(ieeeno)
+);
+
+
+CREATE TABLE paper(
+pap_id numeric(3,0) not null,
+pap_topic varchar(80),
+accepted boolean default false,
+pub_date date,
+PRIMARY KEY (pap_id)
+);
+CREATE TABLE institute(
+inst_id numeric(3,0) not null,
+inst_name varchar(80),
+inst_addr varchar(50),
+inst_type varchar(20),
+PRIMARY KEY (inst_id)
+);
+CREATE TABLE jury(
+ieeeno numeric(8,0) not null,
+con_id numeric(4,0) not null,
+PRIMARY KEY (ieeeno,con_id)
+);
+CREATE TABLE conference(
+con_id numeric(4,0) not null,
+con_loc varchar(50) not null,
+con_sdate date not null,
+con_edate date not null,
+PRIMARY KEY (con_id)
+);
+CREATE TABLE paperwritten(
+ieeeno numeric(8,0) not null,
+pap_id numeric(3,0) not null,
+PRIMARY KEY(ieeeno,pap_id)
+);
+
+
+CREATE TABLE projectwork(
+ieeeno numeric(8,0) not null,
+proj_id varchar(6) not null,
+PRIMARY KEY (ieeeno ,proj_id)
+);
+
+
+CREATE TABLE studentbranch(
+sb_id numeric(7,0) not null,
+sb_name varchar(80) not null,
+sb_doe date not null,
+inst_id numeric(3,0) not null,
+sec_id numeric(7,0) not null,
+ieeeno numeric(8,0),
+PRIMARY KEY (sb_id)
+);
+
+
+CREATE TABLE conferenceparticipation(
+ieeeno numeric(8,0) not null,
+con_id numeric(4,0) not null,
+travel_grant numeric(8,2),
+PRIMARY KEY(ieeeno,con_id)
+);
+
+
+CREATE TABLE paperpresentation(
+pap_id numeric(3,0) not null,
+con_id numeric(4,0) not null,
+ieeeno numeric(8,0) not null,
+PRIMARY KEY (con_id,pap_id)
+);
+
+
+CREATE TABLE project(
+proj_id varchar(6) not null,
+proj_name varchar(80) not null,
+proj_field varchar(30) not null,
+proj_funding numeric(8,2),
+PRIMARY KEY (proj_id)
+);
+
+
+CREATE TABLE studentbranchdesignation(
+sb_id numeric(7,0) not null,
+sb_position varchar(30),
+sb_year date,
+ieeeno numeric(8,0) not null,
+PRIMARY KEY (sb_id,sb_position,sb_year)
+);
+
+
+CREATE TABLE sigmember(
+ieeeno numeric(8,0) not null,
+sig_id numeric(3,0) not null,
+PRIMARY KEY (ieeeno,sig_id)
+);
+
+
+CREATE TABLE studentinterestgroup(
+sig_id numeric(3,0) not null,
+sig_name varchar(80) not null,
+sig_doe date not null,
+sig_field varchar(50),
+PRIMARY KEY (sig_id)
+);
+
+
+CREATE TABLE session(
+ses_id numeric(4,0) not null,
+ses_topic varchar(50) not null,
+ses_stime time,
+ses_etime time,
+ses_desc varchar(50),
+sig_id numeric(3,0),
+PRIMARY KEY(ses_id)
+);
+
+
+
+
+
+
+ALTER TABLE projectwork 
+ADD FOREIGN KEY (proj_id) REFERENCES project(proj_id) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (ieeeno) REFERENCES ieeemember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE studentbranchdesignation
+ADD FOREIGN KEY (ieeeno) REFERENCES studentmember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (sb_id) REFERENCES studentbranch(sb_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE sigmember
+ADD FOREIGN KEY (ieeeno) REFERENCES studentmember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (sig_id) REFERENCES studentinterestgroup(sig_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE session
+ADD FOREIGN KEY (sig_id) REFERENCES studentinterestgroup(sig_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE studentbranch
+ADD FOREIGN KEY (ieeeno) REFERENCES professionalmember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (sec_id) REFERENCES section(sec_id) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (inst_id) REFERENCES institute(inst_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE conferenceparticipation
+ADD FOREIGN KEY (ieeeno) REFERENCES ieeemember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (con_id) REFERENCES conference(con_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE paperpresentation
+ADD FOREIGN KEY (ieeeno) REFERENCES ieeemember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (pap_id) REFERENCES paper(pap_id) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (con_id) REFERENCES conference(con_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE jury
+ADD FOREIGN KEY (ieeeno) REFERENCES professionalmember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (con_id) REFERENCES conference(con_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE paperwritten
+ADD FOREIGN KEY (ieeeno) REFERENCES ieeemember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (pap_id) REFERENCES paper(pap_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE professionalmember
+ADD FOREIGN KEY (ieeeno) REFERENCES ieeemember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+ALTER TABLE studentmember
+ADD FOREIGN KEY (ieeeno) REFERENCES ieeemember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (sb_id) REFERENCES studentbranch(sb_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+
+
+ALTER TABLE sectiondesignation
+ADD FOREIGN KEY (ieeeno) REFERENCES professionalmember(ieeeno) ON DELETE CASCADE ON UPDATE CASCADE,
+ADD FOREIGN KEY (sec_id) REFERENCES section(sec_id) ON DELETE CASCADE ON UPDATE CASCADE;
